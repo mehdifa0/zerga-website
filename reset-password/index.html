@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>New password · Zerga</title>
+<meta name="description" content="Choose a new password for your Zerga account.">
+<link rel="canonical" href="https://mehdifa0.github.io/zerga-website/reset-password/">
+<meta name="theme-color" content="#ffffff">
+<meta property="og:title" content="New password · Zerga">
+<meta property="og:description" content="Choose a new password for your Zerga account.">
+<meta property="og:url" content="https://mehdifa0.github.io/zerga-website/reset-password/">
+<meta property="og:image" content="https://mehdifa0.github.io/zerga-website/assets/og-icon.png">
+<meta name="twitter:card" content="summary">
+<link rel="icon" type="image/png" href="../assets/favicon-64.png">
+<link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap">
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+<header class="wrap top">
+  <a class="brand" href="../"><img src="../assets/zerga-icon.png" alt="" width="34" height="34">Zerga</a>
+  <a class="top-link" href="../support/">Support</a>
+</header>
+<main class="doc" style="max-width:460px">
+<h1>New password</h1>
+<p class="updated" id="lead">Choose a new password for your Zerga account.</p>
+<form id="form" hidden>
+  <label class="field"><span>New password</span><input id="pw" type="password" autocomplete="new-password" minlength="6" required></label>
+  <label class="field"><span>Confirm password</span><input id="pw2" type="password" autocomplete="new-password" minlength="6" required></label>
+  <p id="err" class="err" hidden></p>
+  <button class="store" id="save" type="submit" style="width:100%;justify-content:center;border:0;cursor:pointer">Save new password</button>
+</form>
+<div id="done" class="contact" hidden><h2>Password updated</h2><p>Go back to Zerga and sign in with your new password.</p></div>
+<div id="expired" class="contact" hidden><h2>This link has expired</h2><p>Open Zerga, tap “Forgot password?” and request a new link.</p></div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+  // Public (publishable) key, the same one the app ships with: row-level security protects the data.
+  const client = window.supabase.createClient("https://smyzimcyotfiznvxahmu.supabase.co", "sb_publishable_QZurK5y9Foaj_ZW-tzn4Kw_4HUs9SBw", {
+    auth: { detectSessionInUrl: true, persistSession: false, flowType: "implicit" },
+  });
+  const show = (id) => document.getElementById(id).hidden = false;
+  const hide = (id) => document.getElementById(id).hidden = true;
+  const hash = new URLSearchParams(location.hash.slice(1));
+  async function start() {
+    if (hash.get("error")) { hide("lead"); return show("expired"); }
+    for (let i = 0; i < 20; i++) {
+      const { data } = await client.auth.getSession();
+      if (data.session) { history.replaceState(null, "", location.pathname); return show("form"); }
+      await new Promise((r) => setTimeout(r, 150));
+    }
+    hide("lead"); show("expired");
+  }
+  document.getElementById("form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const pw = document.getElementById("pw").value, pw2 = document.getElementById("pw2").value, err = document.getElementById("err");
+    err.hidden = true;
+    if (pw.length < 6) { err.textContent = "Use at least 6 characters."; return (err.hidden = false); }
+    if (pw !== pw2) { err.textContent = "The passwords don't match."; return (err.hidden = false); }
+    const btn = document.getElementById("save"); btn.disabled = true; btn.textContent = "Saving…";
+    const { error } = await client.auth.updateUser({ password: pw });
+    if (error) { err.textContent = "Couldn't save the password. Request a new link from the app."; err.hidden = false; btn.disabled = false; btn.textContent = "Save new password"; return; }
+    await client.auth.signOut();
+    hide("form"); hide("lead"); show("done");
+  });
+  start();
+</script>
+<footer class="foot">
+  <div class="wrap">
+    <nav><a href="../privacy/">Privacy</a><a href="../terms/">Terms</a><a href="../support/">Support</a></nav>
+    <span>© Zerga 2026</span>
+  </div>
+</footer>
+</body>
+</html>
